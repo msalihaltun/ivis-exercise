@@ -184,22 +184,22 @@ class CytoscapeContainer extends React.Component {
                     'text-valign': 'center',
                     'text-wrap': 'wrap',
                     'background-color': 'orange',
-                    'font-size': '10px'
+                    'font-size': '8px'
                 }
             },
             {
                 selector:'edge',
                 style: {
                     'label': 'data(label)',
-                    'text-halign': 'center',
-                    'text-valign': 'center',
-                    'font-size': '10px'
+                    'width': 3,
+                    'font-size': '5px'
                 }
             }
         ];
 
         const layoutConfig = {
-            name: 'cose-bilkent'
+            name: 'cose-bilkent',
+            randomize: 'false'
         };
 
         var data = this.props.data;
@@ -253,16 +253,17 @@ class CytoscapeContainer extends React.Component {
             ).then(result => {
                 session.close();
                 var records = result.records;
+                var cyElements = [];
                 records.forEach(record => {
                     var title = record.get("movie").properties.title;
-                    cy.add({
+                    cyElements.push({
                         data: {
                             id: title,
                             label: title,
                             class: 'Movie'
                         }
                     });
-                    cy.add({
+                    cyElements.push({
                         data: {
                             id: actorName + "_" + title + "_" + "ACTED_IN",
                             source: actorName,
@@ -271,6 +272,8 @@ class CytoscapeContainer extends React.Component {
                         }
                     });
                 });
+
+                cy.add(cyElements);
 
             }).catch(error => {
                 session.close();
@@ -296,17 +299,18 @@ class CytoscapeContainer extends React.Component {
             ).then(result => {
                 session.close();
                 var records = result.records;
+                var cyElements = [];
                 records.forEach(record => {
                     var name = record.get("actor").properties.name;
-
-                    cy.add({
+                    cyElements.push({
                         data: {
                             id: name,
                             label: name,
                             class: 'Person'
                         }
                     });
-                    cy.add({
+
+                    cyElements.push({
                         data: {
                             id: name + "_" + movieName + "_" + "ACTED_IN",
                             source: name,
@@ -315,9 +319,20 @@ class CytoscapeContainer extends React.Component {
                         }
                     });
                 });
+
+                cy.add(cyElements);
+
             }).catch(error => {
                 session.close();
                 console.log(error);
+            });
+
+            const layout = cy.makeLayout(layoutConfig);
+            layout.run();
+            layout.on("layoutstop", () => {
+                cy.nodes().forEach(node => {
+                    node.unlock();
+                })
             });
         }
 

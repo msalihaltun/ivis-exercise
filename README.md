@@ -1,6 +1,10 @@
 # ivis-exercise
 My implementation repository for i-Vis Engineer Exercise.
 
+## Existing Issues
+1. In adding new nodes via context menu, all nodes appear on top of each other. But the next time a context menu
+option is used, the layout fixes itself.
+
 ## Installation
 1. Clone this repository.
 2. Run `npm install`.
