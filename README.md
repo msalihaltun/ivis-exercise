@@ -10,7 +10,7 @@ My implementation repository for i-Vis Engineer Exercise.
 5. `npm start` in the cloned repository folder.
     1. When I ran the Neo4j browser driver, I couldn't use the default password, which is `neo4j`. Therefore in my PC I 
     changed this password to `password`. This might need change if the cloner's user info is different. The driver
-    instantiation is on top of [index.jsx file](/public/javascripts/index.jsx) The username is `neo4j` as default.
+    instantiation is on top of [index.jsx file](/public/javascripts/index.jsx). The username is `neo4j` as default.
 6. Write the actor name and number and press the search button.
 7. Right click on movie nodes and select "Show Actors" to add the actors that acted in the movie to the graph.
 8. Right click on actor nodes and select "Show Movies" to add the movies that they acted in to the graph.
