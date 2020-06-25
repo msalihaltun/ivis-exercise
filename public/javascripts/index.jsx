@@ -368,6 +368,15 @@ class CytoscapeContainer extends React.Component {
                                 cy.remove(element);
                             }
                         });
+                        cy.ready(function() {
+                            const layout = cy.makeLayout(incrementalLayout);
+                            layout.run();
+                            layout.on("layoutstop", () => {
+                                cy.nodes().forEach(node => {
+                                    node.unlock();
+                                })
+                            });
+                        });
                     }
                 },
                 {

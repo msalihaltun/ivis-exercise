@@ -3,7 +3,8 @@ My implementation repository for i-Vis Engineer Exercise.
 
 ## Functionality Added
 * Any node can be removed via the context menu. If, after this removal operation, a node is left with no
-connections to the rest of the graph, it is also removed.
+connections to the rest of the graph, it is also removed. After the removal operation, the graph will
+auto-adjust the layout.
 * Graph can be centered by using the context menu option "Center Graph" which is accessible on right click
 on the canvas.
 
