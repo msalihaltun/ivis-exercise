@@ -1,4 +1,5 @@
 var driver = neo4j.driver('neo4j://localhost', neo4j.auth.basic('neo4j', 'password'));
+var cy = {};
 
 class App extends React.Component {
 
@@ -6,21 +7,11 @@ class App extends React.Component {
         super(props);
         this.state = {
             data: {
-                nodes: [],
-                edges: []
+                initialNodes: [],
+                initialEdges: []
             }
         };
         this.onGraphQueryChange = this.onGraphQueryChange.bind(this);
-        this.showMovies = this.showMovies.bind(this);
-        this.showActors = this.showActors.bind(this);
-    }
-
-    showMovies(nodeData) {
-        var actorName = nodeData.id;
-    }
-
-    showActors(nodeData) {
-
     }
 
     onGraphQueryChange(actorName, actorNumber) {
@@ -29,15 +20,25 @@ class App extends React.Component {
             return;
         }
 
+        var maxPathLength = (parseInt(actorNumber) * 2).toString();
+
         var session = driver.session();
         session.run(
             'MATCH neighborhood = (actor:Person {name: $name}) \
-            -[*1..' + actorNumber +']-(neighbor) \
+            -[*1..' + maxPathLength +']-(neighbor) \
             RETURN DISTINCT neighborhood',
             {name: actorName}
         ).then(result => {
             session.close();
             var records = result.records;
+
+            /*
+            trying to make sure the added nodes are unique,
+            the query returns paths of length up to the max
+            length allowed which means in results there are
+            repeated nodes and edges. There should be a 
+            better query that I'm not quite getting at.
+            */
 
             var nodes = {};
             var edges = {};
@@ -80,8 +81,8 @@ class App extends React.Component {
 
             this.setState({
                 data: {
-                    nodes: nodes,
-                    edges: edges
+                    initialNodes: nodes,
+                    initialEdges: edges
                 }
             });
 
@@ -99,8 +100,6 @@ class App extends React.Component {
                 />
                 <CytoscapeContainer
                     data={this.state.data}
-                    showMovies={this.showMovies}
-                    showActors={this.showActors}
                 />
             </div>
         );
@@ -156,14 +155,9 @@ class CytoscapeContainer extends React.Component {
     
     constructor(props) {
         super(props);
-        this.renderCy = this.renderCy.bind(this);
-        this.state = {
-            cy: {}
-        }
     }
 
     renderCy() {
-
         const cyStyle = [
             {
                 selector: "node[class='Person']",
@@ -173,7 +167,7 @@ class CytoscapeContainer extends React.Component {
                     'text-valign': 'center',
                     'text-wrap': 'wrap',
                     'background-color': 'cyan',
-                    'font-size': '10px',
+                    'font-size': '8px',
                 }
             },
             {
@@ -197,14 +191,19 @@ class CytoscapeContainer extends React.Component {
             }
         ];
 
-        const layoutConfig = {
+        const randomizedLayout = {
             name: 'cose-bilkent',
-            randomize: 'false'
+            randomize: true
+        };
+
+        const incrementalLayout = {
+            name: 'cose-bilkent',
+            randomize: false
         };
 
         var data = this.props.data;
-        var nodes = data.nodes;
-        var edges = data.edges;
+        var nodes = data.initialNodes;
+        var edges = data.initialEdges;
 
         var cyNodes = [];
         Object.entries(nodes).forEach((entry) => {
@@ -233,16 +232,16 @@ class CytoscapeContainer extends React.Component {
             });
         });
 
-        var cy = cytoscape({
+        cy = cytoscape({
             container: document.getElementById("cy"),
             elements:  {
                 nodes: cyNodes,
                 edges: cyEdges
             },
-            layout: layoutConfig,
+            layout: randomizedLayout,
             style: cyStyle
         });
-        
+
         function addMovies(actorName) {
             var session = driver.session();
             session.run(
@@ -272,20 +271,22 @@ class CytoscapeContainer extends React.Component {
                         }
                     });
                 });
-
+    
                 cy.add(cyElements);
-
+    
+                cy.ready(function() {
+                    const layout = cy.makeLayout(incrementalLayout);
+                    layout.run();
+                    layout.on("layoutstop", () => {
+                        cy.nodes().forEach(node => {
+                            node.unlock();
+                        })
+                    });
+                });
+    
             }).catch(error => {
                 session.close();
                 console.log(error);
-            });
-
-            const layout = cy.makeLayout(layoutConfig);
-            layout.run();
-            layout.on("layoutstop", () => {
-                cy.nodes().forEach(node => {
-                    node.unlock();
-                })
             });
         }
 
@@ -322,17 +323,19 @@ class CytoscapeContainer extends React.Component {
 
                 cy.add(cyElements);
 
+                cy.ready(function() {
+                    const layout = cy.makeLayout(incrementalLayout);
+                    layout.run();
+                    layout.on("layoutstop", () => {
+                        cy.nodes().forEach(node => {
+                            node.unlock();
+                        })
+                    });
+                });
+                
             }).catch(error => {
                 session.close();
                 console.log(error);
-            });
-
-            const layout = cy.makeLayout(layoutConfig);
-            layout.run();
-            layout.on("layoutstop", () => {
-                cy.nodes().forEach(node => {
-                    node.unlock();
-                })
             });
         }
 
@@ -353,9 +356,31 @@ class CytoscapeContainer extends React.Component {
                     onClickFunction: function(event) {
                         addActors(event.target.data().id);
                     }
+                },
+                {
+                    id: 'removeNode',
+                    content: 'Remove',
+                    selector: 'node',
+                    onClickFunction: function(event) {
+                        cy.remove(event.target);
+                        cy.nodes(element => {
+                            if (element.degree() < 1) {
+                                cy.remove(element);
+                            }
+                        });
+                    }
+                },
+                {
+                    id: 'centerGraph',
+                    content: 'Center Graph',
+                    coreAsWell: true,
+                    onClickFunction: function() {
+                        cy.center();
+                    }
                 }
             ]
         });
+
     }
 
     componentDidUpdate(){
@@ -372,10 +397,8 @@ class CytoscapeContainer extends React.Component {
 }
 
 $(function() {
-
     ReactDOM.render(
         <App/>,
         document.getElementById('react-root')
     );
-
 })

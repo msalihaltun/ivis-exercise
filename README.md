@@ -1,9 +1,11 @@
 # ivis-exercise
 My implementation repository for i-Vis Engineer Exercise.
 
-## Existing Issues
-1. In adding new nodes via context menu, all nodes appear on top of each other. But the next time a context menu
-option is used, the layout fixes itself.
+## Functionality Added
+* Any node can be removed via the context menu. If, after this removal operation, a node is left with no
+connections to the rest of the graph, it is also removed.
+* Graph can be centered by using the context menu option "Center Graph" which is accessible on right click
+on the canvas.
 
 ## Installation
 1. Clone this repository.
